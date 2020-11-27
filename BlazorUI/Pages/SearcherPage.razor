@@ -1,0 +1,100 @@
+﻿@page "/"
+
+@using BlazorUI.Data
+@inject SuperSearcherService superSearcherService
+
+<p>
+	<label>Select searcher:</label>
+	<select @onchange="SetSearcher">
+		@foreach (var searcher in searchers)
+		{
+			<option value=@searcher>@searcher</option>
+		}
+	</select>
+</p>
+
+<p>
+	<span style="font-size: 14px;">@GetQueryStatistics(searchQuery)</span>
+	<br />
+	<input @bind="searchQuery" @bind:event="oninput" />
+	<button @onclick="e => Search(searchQuery)">Search</button>
+	<span>Search history: </span>
+	@foreach (var item in superSearcherService.GetSearchHistory())
+	{
+		<a style="padding: 0 5px" href="#" @onclick="e => Search(item)">@item</a>
+	}
+	<br />
+	<label>Search results count:</label>
+	<select @onchange="SetResultsCount">
+		@foreach (var item in searchResultsCountList)
+		{
+			<option value=@item>@item</option>
+		}
+	</select>
+</p>
+
+
+@if (superSearcherService.searchResults == null)
+{
+<p><em>No search results yet.</em></p>
+}
+else
+{
+<p>
+	@if (superSearcherService.searchResults.Count == 0)
+	{
+		<em>No results.</em>
+	}
+
+<ol>
+	@foreach (var item in superSearcherService.searchResults)
+	{
+	<li style="padding-bottom: 10px;">
+		<span style="font-size: 16px">@item</span>
+		<br />
+		<span style="font-size: 14px; font-style: italic">@GetQueryStatistics(item)</span>
+	</li>
+	}
+</ol>
+</p>
+}
+
+@functions {
+	string searchQuery = "";
+
+	string GetQueryStatistics(string str)
+	{
+		return str == string.Empty ?
+			"" : $"Word count: {str.WordCount()} | Letter count: {str.LetterCount()} | Letter distribution: {str.LetterDistribution(20)}";
+	}
+
+	async Task Search(string query)
+	{
+		searchQuery = query;
+		await superSearcherService.Search(searchQuery);
+	}
+
+	async Task SetResultsCount(ChangeEventArgs e)
+	{
+		superSearcherService.resultsCount = Convert.ToInt32(e.Value);
+		if (searchQuery != string.Empty)
+		{
+			await superSearcherService.Search(searchQuery);
+		}
+	}
+
+	async Task SetSearcher(ChangeEventArgs e)
+	{
+		superSearcherService.SetCurrentSearcher(e.Value.ToString());
+	}
+}
+
+@code {
+	private int[] searchResultsCountList = { 3, 5, 10 };
+	private string[] searchers = { "NewYorkTimes", "FileSystem" };
+
+	protected override void OnInitialized()
+	{
+		superSearcherService.SetCurrentSearcher(searchers[0]);
+	}
+}
