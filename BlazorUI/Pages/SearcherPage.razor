@@ -85,7 +85,7 @@ else
 
 	async Task SetSearcher(ChangeEventArgs e)
 	{
-		superSearcherService.SetCurrentSearcher(e.Value.ToString());
+		await Task.Run(() => superSearcherService.SetCurrentSearcher(e.Value.ToString()));
 	}
 }
 
